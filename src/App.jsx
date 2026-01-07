@@ -3,8 +3,8 @@ import { createClient } from '@supabase/supabase-js';
 import { ShoppingCart, Leaf, User, ShieldCheck, Trash2, Plus, LogOut, Search } from 'lucide-react';
 
 // --- CONFIGURATION ---
-const supabaseUrl = 'YOUR_SUPABASE_URL';
-const supabaseKey = 'YOUR_SUPABASE_ANON_KEY';
+const supabaseUrl = 'https://aeieldsxmgnvcspzaxux.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFlaWVsZHN4bWdudmNzcHpheHV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4MDA1NTEsImV4cCI6MjA4MzM3NjU1MX0.MNUVBK9xBsK2jmzjLPksLDfUNE0u4Pgboh-BDZ8LGTA';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 const App = () => {
