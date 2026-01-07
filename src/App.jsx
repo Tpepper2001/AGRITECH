@@ -1,258 +1,242 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { ShoppingCart, Leaf, User, ShieldCheck, Trash2, Plus, LogOut, Search } from 'lucide-react';
+import { ShoppingCart, Leaf, User, ShieldCheck, Trash2, Plus, LogOut, Search, MapPin, X } from 'lucide-react';
 
-// --- CONFIGURATION ---
+// --- CONFIGURATION (Replace with your keys) ---
 const supabaseUrl = 'https://aeieldsxmgnvcspzaxux.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFlaWVsZHN4bWdudmNzcHpheHV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4MDA1NTEsImV4cCI6MjA4MzM3NjU1MX0.MNUVBK9xBsK2jmzjLPksLDfUNE0u4Pgboh-BDZ8LGTA';
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFlaWVsZHN4bWdudmNzcHpheHV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4MDA1NTEsImV4cCI6MjA4MzM3NjU1MX0.MNUVBK9xBsK2jmzjLPksLDfUNE0u4Pgboh-BDZ8LGTA'; const supabase = createClient(supabaseUrl, supabaseKey);
+
+// --- 50 FICTIONAL PRODUCTS DATA ---
+const MOCK_PRODUCTS = [
+  { id: 1, name: "Ogbomosho Yam (Large)", price: 4500, category: "Tubers", location: "Oyo State", image: "https://images.unsplash.com/photo-1591073113125-e46713c829ed?w=400" },
+  { id: 2, name: "Abakaliki Rice (50kg)", price: 65000, category: "Grains", location: "Ebonyi State", image: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400" },
+  { id: 3, name: "Fresh Plum Tomatoes (Basket)", price: 12000, category: "Vegetables", location: "Jos, Plateau", image: "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=400" },
+  { id: 4, name: "Benue Oranges (Bag)", price: 8500, category: "Fruits", location: "Benue State", image: "https://images.unsplash.com/photo-1557800636-894a64c1696f?w=400" },
+  { id: 5, name: "Habanero Pepper (Atarodo)", price: 2500, category: "Vegetables", location: "Kano State", image: "https://images.unsplash.com/photo-1566311103631-f925f560e70a?w=400" },
+  { id: 6, name: "Sweet Potatoes", price: 3500, category: "Tubers", location: "Kwara State", image: "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=400" },
+  { id: 7, name: "Organic Honey (1L)", price: 5500, category: "Natural", location: "Kogi State", image: "https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=400" },
+  { id: 8, name: "Red Onions (Sack)", price: 22000, category: "Vegetables", location: "Sokoto State", image: "https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?w=400" },
+  { id: 9, name: "Smoked Catfish (Pack of 4)", price: 7000, category: "Protein", location: "Ogun State", image: "https://images.unsplash.com/photo-1559737558-2f5a35f4523b?w=400" },
+  { id: 10, name: "Cassava Flour (Garri - 5kg)", price: 3200, category: "Grains", location: "Edo State", image: "https://images.unsplash.com/photo-1621505345757-0a86d4791e84?w=400" },
+  // ... adding more for the count of 50
+  ...Array.from({ length: 40 }).map((_, i) => ({
+    id: i + 11,
+    name: ["Plantain Bunch", "Cocoa Powder", "Palm Oil (5L)", "Local Eggs", "Fresh Ginger", "Garlic Bulbs", "Yellow Maize", "Green Peas", "Carrots", "Spinach (Ugwu)"][i % 10] + " " + (i + 1),
+    price: Math.floor(Math.random() * 15000) + 1000,
+    category: ["Fruits", "Grains", "Oil", "Vegetables", "Spices"][i % 5],
+    location: ["Lagos", "Ibadan", "Ondo", "Enugu", "Kaduna"][i % 5],
+    image: `https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&sig=${i}`
+  }))
+];
 
 const App = () => {
+  // --- STATES ---
+  const [view, setView] = useState('home'); 
   const [user, setUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [view, setView] = useState('home'); // home, shop, admin, cart, login
-  const [products, setProducts] = useState([]);
   const [cart, setCart] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [products, setProducts] = useState(MOCK_PRODUCTS);
+  const [search, setSearch] = useState('');
+  const [authForm, setAuthForm] = useState({ email: '', password: '' });
 
-  // Auth States
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-
-  useEffect(() => {
-    fetchProducts();
-    checkUser();
-  }, []);
-
-  const checkUser = async () => {
-    const { data } = await supabase.auth.getUser();
-    if (data?.user) {
-      setUser(data.user);
-      // In a real app, check a 'profiles' table for role === 'admin'
-      setIsAdmin(data.user.email.includes('admin')); 
-    }
+  // --- STYLING OBJECTS (In-code CSS) ---
+  const colors = {
+    primary: '#166534', // Forest Green
+    secondary: '#f97316', // Nigerian Orange
+    light: '#f0fdf4',
+    white: '#ffffff',
+    dark: '#1e293b',
+    border: '#e2e8f0'
   };
 
-  const fetchProducts = async () => {
-    setLoading(true);
-    const { data, error } = await supabase.from('products').select('*');
-    if (!error) setProducts(data || []);
-    setLoading(false);
+  const s = {
+    navbar: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 5%;', background: colors.white, borderBottom: `1px solid ${colors.border}`, sticky: 'top', position: 'fixed', width: '90%', top: 0, zIndex: 1000 },
+    container: { maxWidth: '1200px', margin: '100px auto 0', padding: '0 20px' },
+    hero: { background: `linear-gradient(rgba(22,101,52,0.9), rgba(22,101,52,0.9)), url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1200')`, padding: '100px 20px', textAlign: 'center', borderRadius: '24px', color: colors.white, marginBottom: '40px' },
+    btnPrimary: { background: colors.secondary, color: colors.white, border: 'none', padding: '12px 28px', borderRadius: '50px', fontWeight: 'bold', cursor: 'pointer', fontSize: '16px' },
+    btnGreen: { background: colors.primary, color: colors.white, border: 'none', padding: '12px 28px', borderRadius: '50px', fontWeight: 'bold', cursor: 'pointer' },
+    card: { background: colors.white, borderRadius: '16px', border: `1px solid ${colors.border}`, padding: '15px', position: 'relative', overflow: 'hidden' },
+    grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '25px', marginBottom: '50px' },
+    input: { width: '100%', padding: '12px', marginBottom: '15px', borderRadius: '10px', border: `1px solid ${colors.border}`, boxSizing: 'border-box' },
+    badge: { background: '#ffedd5', color: '#9a3412', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold' },
+    footer: { textAlign: 'center', padding: '50px', color: '#64748b', fontSize: '14px' }
   };
 
-  // --- AUTH LOGIC ---
-  const handleLogin = async (role) => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) alert(error.message);
-    else {
-      setUser(data.user);
-      setIsAdmin(role === 'admin');
-      setView('home');
-    }
-  };
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setIsAdmin(false);
-    setView('home');
-  };
-
-  // --- CART LOGIC ---
-  const addToCart = (product) => {
-    setCart([...cart, product]);
-    alert(`${product.name} added to basket!`);
-  };
-
-  const cartTotal = cart.reduce((acc, item) => acc + item.price, 0);
-
-  // --- PAYSTACK INTEGRATION ---
+  // --- LOGIC ---
   const handlePayment = () => {
     if (!user) return setView('login');
-
+    const total = cart.reduce((acc, item) => acc + item.price, 0);
+    
     const handler = window.PaystackPop.setup({
-      key: 'YOUR_PAYSTACK_PUBLIC_KEY', // Replace with your public key
+      key: 'pk_test_your_key_here',
       email: user.email,
-      amount: cartTotal * 100, // Paystack is in Kobo
+      amount: total * 100,
       currency: 'NGN',
-      callback: (response) => {
-        alert('Payment Successful! Ref: ' + response.reference);
+      callback: (res) => {
+        alert("Transaction Successful: " + res.reference);
         setCart([]);
         setView('home');
-      },
-      onClose: () => alert('Transaction cancelled.'),
+      }
     });
     handler.openIframe();
   };
 
-  // --- STYLES (Nigeria Market Aesthetic) ---
-  const styles = {
-    nav: "flex justify-between items-center p-4 bg-white border-b sticky top-0 z-50",
-    btnPrimary: "bg-green-600 text-white px-6 py-2 rounded-full font-bold hover:bg-green-700 transition",
-    btnSecondary: "border-2 border-green-600 text-green-600 px-6 py-2 rounded-full font-bold",
-    card: "bg-white p-4 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition",
-    input: "w-full p-3 border rounded-xl mb-4 bg-gray-50",
-    badge: "bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-bold uppercase"
+  const login = (role) => {
+    if (!authForm.email || !authForm.password) return alert("Enter credentials");
+    setUser({ email: authForm.email });
+    setIsAdmin(role === 'admin');
+    setView('home');
   };
 
-  return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
-      {/* Navigation */}
-      <nav className={styles.nav}>
-        <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('home')}>
-          <div className="bg-green-600 p-2 rounded-lg"><Leaf size={24} color="white" /></div>
-          <h1 className="text-2xl font-black tracking-tight text-green-800">FARM<span className="text-orange-500">DIRECT</span></h1>
-        </div>
+  const filteredProducts = products.filter(p => 
+    p.name.toLowerCase().includes(search.toLowerCase()) || 
+    p.category.toLowerCase().includes(search.toLowerCase())
+  );
 
-        <div className="flex gap-6 items-center">
-          <button onClick={() => setView('shop')} className="hidden md:block font-medium">Browse Farm</button>
-          {isAdmin && <button onClick={() => setView('admin')} className="text-orange-600 font-bold flex items-center gap-1"><ShieldCheck size={18}/> Admin</button>}
-          
-          <div className="flex items-center gap-4">
-            <button onClick={() => setView('cart')} className="relative p-2">
-              <ShoppingCart size={24} />
-              {cart.length > 0 && <span className="absolute top-0 right-0 bg-orange-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">{cart.length}</span>}
-            </button>
-            {user ? (
-              <button onClick={handleLogout} className="p-2 text-gray-500"><LogOut size={24}/></button>
-            ) : (
-              <button onClick={() => setView('login')} className={styles.btnPrimary}>Login</button>
-            )}
+  return (
+    <div style={{ background: '#f8fafc', minHeight: '100vh', fontFamily: 'system-ui, sans-serif' }}>
+      
+      {/* Navbar */}
+      <nav style={s.navbar}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }} onClick={() => setView('home')}>
+          <div style={{ background: colors.primary, padding: '8px', borderRadius: '10px' }}><Leaf color="white" size={20}/></div>
+          <span style={{ fontSize: '22px', fontWeight: '900', color: colors.primary }}>FARM<span style={{ color: colors.secondary }}>DIRECT</span></span>
+        </div>
+        
+        <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+          <button style={{ background: 'none', border: 'none', fontWeight: '600', cursor: 'pointer' }} onClick={() => setView('shop')}>Shop Produce</button>
+          <div style={{ position: 'relative', cursor: 'pointer' }} onClick={() => setView('cart')}>
+            <ShoppingCart size={24} color={colors.primary} />
+            {cart.length > 0 && <span style={{ position: 'absolute', top: '-8px', right: '-8px', background: colors.secondary, color: 'white', fontSize: '10px', width: '18px', height: '18px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{cart.length}</span>}
           </div>
+          {isAdmin && <button style={{ border: `1px solid ${colors.secondary}`, color: colors.secondary, padding: '5px 15px', borderRadius: '5px', fontWeight: 'bold' }} onClick={() => setView('admin')}>Admin</button>}
+          {user ? (
+            <button style={{ border: 'none', background: 'none' }} onClick={() => setUser(null)}><LogOut size={20}/></button>
+          ) : (
+            <button style={s.btnGreen} onClick={() => setView('login')}>Login</button>
+          )}
         </div>
       </nav>
 
-      {/* Hero Section */}
-      {view === 'home' && (
-        <main>
-          <div className="bg-green-800 text-white py-20 px-6 text-center">
-            <h2 className="text-4xl md:text-6xl font-black mb-4">Fresh from the Farm <br/>to your Lagos Kitchen.</h2>
-            <p className="text-green-100 mb-8 text-lg">Skip the market crowd. Buy affordable, organic produce directly from rural farmers.</p>
-            <button onClick={() => setView('shop')} className="bg-orange-500 hover:bg-orange-600 text-white px-10 py-4 rounded-full text-xl font-bold transition transform hover:scale-105">
-              Start Shopping Now
-            </button>
-          </div>
-          
-          <div className="max-w-6xl mx-auto p-8 grid md:grid-cols-3 gap-8 text-center">
-             <div className="p-6">
-                <div className="bg-orange-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-orange-600">🇳🇬</div>
-                <h3 className="font-bold text-xl mb-2">100% Nigerian</h3>
-                <p className="text-gray-600">Supporting local farmers across the 36 states.</p>
-             </div>
-             <div className="p-6">
-                <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-green-600">⚡</div>
-                <h3 className="font-bold text-xl mb-2">Fast Delivery</h3>
-                <p className="text-gray-600">Same day delivery for urban centers in Lagos and Abuja.</p>
-             </div>
-             <div className="p-6">
-                <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600">💎</div>
-                <h3 className="font-bold text-xl mb-2">Best Prices</h3>
-                <p className="text-gray-600">No middle-men, just pure farm-to-table savings.</p>
-             </div>
-          </div>
-        </main>
-      )}
-
-      {/* Shop / Product Listing */}
-      {(view === 'shop' || view === 'home') && (
-        <div className="max-w-6xl mx-auto p-6">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-black">Today's Harvest</h2>
-            <div className="flex bg-white border rounded-full px-4 py-2 w-1/3">
-              <Search className="text-gray-400 mr-2" />
-              <input type="text" placeholder="Search Tomatoes, Yam, Garri..." className="outline-none w-full" />
+      <div style={s.container}>
+        
+        {/* Home / Hero */}
+        {view === 'home' && (
+          <>
+            <div style={s.hero}>
+              <h1 style={{ fontSize: '48px', marginBottom: '15px' }}>Freshness Delivered.</h1>
+              <p style={{ fontSize: '18px', opacity: 0.9, marginBottom: '30px' }}>Connecting Nigeria's hard-working farmers directly to your urban doorstep.</p>
+              <button style={s.btnPrimary} onClick={() => setView('shop')}>Shop Latest Harvest</button>
             </div>
-          </div>
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '30px', alignItems: 'center' }}>
+              <h2 style={{ fontSize: '28px', color: colors.primary }}>Recommended for You</h2>
+              <div style={{ display: 'flex', background: 'white', padding: '10px', borderRadius: '10px', border: `1px solid ${colors.border}`, width: '300px' }}>
+                <Search size={20} color="#94a3b8" style={{ marginRight: '10px' }}/>
+                <input 
+                  placeholder="Search tomatoes, yam..." 
+                  style={{ border: 'none', outline: 'none', width: '100%' }}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+            </div>
+          </>
+        )}
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            {products.map(product => (
-              <div key={product.id} className={styles.card}>
-                <img src={product.image_url || 'https://via.placeholder.com/300x200?text=Produce'} className="w-full h-48 object-cover rounded-xl mb-4" />
-                <span className={styles.badge}>{product.category}</span>
-                <h3 className="font-bold text-xl mt-2">{product.name}</h3>
-                <p className="text-gray-500 text-sm mb-4">{product.location}</p>
-                <div className="flex justify-between items-center">
-                  <span className="text-2xl font-black text-green-700">₦{product.price.toLocaleString()}</span>
-                  <button onClick={() => addToCart(product)} className="bg-green-100 text-green-700 p-2 rounded-lg hover:bg-green-700 hover:text-white transition">
-                    <Plus size={20} />
+        {/* Shop View */}
+        {(view === 'shop' || view === 'home') && (
+          <div style={s.grid}>
+            {filteredProducts.map(product => (
+              <div key={product.id} style={s.card}>
+                <img src={product.image} alt={product.name} style={{ width: '100%', height: '180px', objectCover: 'cover', borderRadius: '12px', marginBottom: '12px' }} />
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                  <span style={s.badge}>{product.category}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', fontSize: '12px', color: '#64748b' }}>
+                    <MapPin size={12} style={{ marginRight: '3px' }}/> {product.location}
+                  </div>
+                </div>
+                <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: '10px 0' }}>{product.name}</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '15px' }}>
+                  <span style={{ fontSize: '20px', fontWeight: '900', color: colors.primary }}>₦{product.price.toLocaleString()}</span>
+                  <button 
+                    style={{ background: colors.light, border: 'none', padding: '8px', borderRadius: '8px', cursor: 'pointer' }}
+                    onClick={() => { setCart([...cart, product]); alert("Added to basket!"); }}
+                  >
+                    <Plus size={20} color={colors.primary} />
                   </button>
                 </div>
               </div>
             ))}
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Login Section */}
-      {view === 'login' && (
-        <div className="max-w-md mx-auto mt-20 p-8 bg-white rounded-3xl shadow-xl">
-          <h2 className="text-3xl font-black mb-6 text-center">Welcome Back</h2>
-          <input type="email" placeholder="Email Address" className={styles.input} onChange={(e) => setEmail(e.target.value)} />
-          <input type="password" placeholder="Password" className={styles.input} onChange={(e) => setPassword(e.target.value)} />
-          <div className="grid grid-cols-2 gap-4">
-            <button onClick={() => handleLogin('customer')} className={styles.btnPrimary}>User Login</button>
-            <button onClick={() => handleLogin('admin')} className={styles.btnSecondary}>Admin Login</button>
-          </div>
-          <p className="mt-6 text-center text-sm text-gray-500">Rural farmers connecting to urban demand.</p>
-        </div>
-      )}
-
-      {/* Cart Section */}
-      {view === 'cart' && (
-        <div className="max-w-2xl mx-auto mt-10 p-6 bg-white rounded-3xl shadow-lg">
-          <h2 className="text-3xl font-black mb-8">Your Basket</h2>
-          {cart.length === 0 ? (
-            <p className="text-center py-10 text-gray-400">Your basket is empty. Start shopping!</p>
-          ) : (
-            <>
-              {cart.map((item, idx) => (
-                <div key={idx} className="flex justify-between items-center mb-4 border-b pb-4">
-                  <div className="flex items-center gap-4">
-                    <img src={item.image_url} className="w-16 h-16 rounded-lg object-cover" />
+        {/* Cart View */}
+        {view === 'cart' && (
+          <div style={{ maxWidth: '600px', margin: '0 auto', background: 'white', padding: '30px', borderRadius: '24px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}>
+            <h2 style={{ fontSize: '24px', marginBottom: '20px' }}>Shopping Basket</h2>
+            {cart.length === 0 ? <p>Your basket is empty.</p> : (
+              <>
+                {cart.map((item, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '15px 0', borderBottom: '1px solid #f1f5f9' }}>
                     <div>
-                      <h4 className="font-bold">{item.name}</h4>
-                      <p className="text-green-600 font-bold">₦{item.price.toLocaleString()}</p>
+                      <h4 style={{ margin: 0 }}>{item.name}</h4>
+                      <small style={{ color: colors.primary, fontWeight: 'bold' }}>₦{item.price.toLocaleString()}</small>
                     </div>
+                    <button style={{ border: 'none', background: 'none', color: '#ef4444', cursor: 'pointer' }} onClick={() => setCart(cart.filter((_, idx) => idx !== i))}>
+                      <Trash2 size={18}/>
+                    </button>
                   </div>
-                  <button onClick={() => setCart(cart.filter((_, i) => i !== idx))}><Trash2 size={20} className="text-red-400"/></button>
+                ))}
+                <div style={{ marginTop: '30px', borderTop: '2px dashed #e2e8f0', paddingTop: '20px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '22px', fontWeight: '900', marginBottom: '20px' }}>
+                    <span>Total:</span>
+                    <span>₦{cart.reduce((a, b) => a + b.price, 0).toLocaleString()}</span>
+                  </div>
+                  <button style={{ ...s.btnPrimary, width: '100%', padding: '18px' }} onClick={handlePayment}>Pay with Paystack</button>
                 </div>
-              ))}
-              <div className="mt-8 pt-4 border-t-2 border-dashed">
-                <div className="flex justify-between text-2xl font-black mb-6">
-                  <span>Total:</span>
-                  <span>₦{cartTotal.toLocaleString()}</span>
-                </div>
-                <button onClick={handlePayment} className="w-full bg-green-600 text-white py-4 rounded-2xl font-bold text-xl shadow-lg shadow-green-200">
-                  Pay with Paystack
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      )}
-
-      {/* Admin Dashboard */}
-      {view === 'admin' && (
-        <div className="max-w-4xl mx-auto mt-10 p-6 bg-white rounded-3xl border shadow-sm">
-          <h2 className="text-3xl font-black mb-6">Farmer Dashboard</h2>
-          <div className="bg-yellow-50 p-4 rounded-xl mb-8 border border-yellow-200 text-yellow-800">
-             Hello Admin! You can list new produce for the urban market here.
+              </>
+            )}
           </div>
-          <form className="grid grid-cols-2 gap-4" onSubmit={(e) => {
-            e.preventDefault();
-            alert("This would call: supabase.from('products').insert(...)");
-          }}>
-            <input placeholder="Produce Name (e.g. Ogbomosho Yam)" className={styles.input} />
-            <input placeholder="Price (NGN)" type="number" className={styles.input} />
-            <input placeholder="Category (Tubers, Veggies, Grains)" className={styles.input} />
-            <input placeholder="Image URL" className={styles.input} />
-            <button className="col-span-2 bg-green-800 text-white p-4 rounded-xl font-bold">List Product for Sale</button>
-          </form>
-        </div>
-      )}
+        )}
 
-      <footer className="mt-20 p-10 bg-gray-900 text-white text-center">
-        <p>© 2023 FarmDirect Nigeria. Empowering rural farmers, feeding cities.</p>
+        {/* Login View */}
+        {view === 'login' && (
+          <div style={{ maxWidth: '400px', margin: '50px auto', background: 'white', padding: '40px', borderRadius: '24px', textAlign: 'center' }}>
+            <h2>Welcome Back</h2>
+            <p style={{ color: '#64748b', marginBottom: '25px' }}>Access your farm-to-table account</p>
+            <input placeholder="Email Address" style={s.input} onChange={e => setAuthForm({...authForm, email: e.target.value})} />
+            <input placeholder="Password" type="password" style={s.input} onChange={e => setAuthForm({...authForm, password: e.target.value})} />
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button style={{ ...s.btnGreen, flex: 1 }} onClick={() => login('customer')}>Customer Login</button>
+              <button style={{ ...s.btnPrimary, flex: 1, background: colors.dark }} onClick={() => login('admin')}>Admin Login</button>
+            </div>
+          </div>
+        )}
+
+        {/* Admin Dashboard */}
+        {view === 'admin' && (
+          <div style={{ background: 'white', padding: '40px', borderRadius: '24px' }}>
+            <h2 style={{ marginBottom: '20px' }}>Farmer / Admin Dashboard</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+              <div style={{ padding: '20px', background: colors.light, borderRadius: '15px' }}>
+                <h3>Add New Produce</h3>
+                <input placeholder="Product Name" style={s.input} />
+                <input placeholder="Price" style={s.input} />
+                <input placeholder="Location" style={s.input} />
+                <button style={s.btnGreen}>List Product</button>
+              </div>
+              <div style={{ padding: '20px', border: `1px solid ${colors.border}`, borderRadius: '15px' }}>
+                <h3>Recent Orders</h3>
+                <p style={{ color: '#64748b' }}>No recent orders to show today.</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+      </div>
+
+      <footer style={s.footer}>
+        <p>© 2025 FarmDirect Agritech Nigeria. Connecting rural farmers to urban kitchens.</p>
       </footer>
     </div>
   );
