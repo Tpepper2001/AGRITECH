@@ -8,8 +8,8 @@ import {
 
 // --- CONSTANTS & CONFIG ---
 // ⚠️ REPLACE WITH YOUR REAL KEYS ⚠️
-const SUPABASE_URL = 'https://your-project-url.supabase.co'; 
-const SUPABASE_KEY = 'your-anon-key'; 
+const supabaseUrl = 'https://aeieldsxmgnvcspzaxux.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFlaWVsZHN4bWdudmNzcHpheHV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4MDA1NTEsImV4cCI6MjA4MzM3NjU1MX0.MNUVBK9xBsK2jmzjLPksLDfUNE0u4Pgboh-BDZ8LGTA'; 
 const PAYSTACK_PUBLIC_KEY = 'pk_test_your_paystack_key'; 
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
